@@ -1,0 +1,17 @@
+#Get the average city population by state
+
+db.Maps.aggregate([
+  {
+    $group: {
+      _id: "$state_name",
+      avgPopulation: { $avg: "$population" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      state_name: "$_id",
+      avgPopulation: 1
+    }
+  }
+])
