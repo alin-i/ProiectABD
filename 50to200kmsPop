@@ -1,0 +1,32 @@
+Get the total population situated between 50 and 200 kms around New York's landmark, the Statue of Liberty at coordinates 40.689247, -74.044502
+
+2dsphere index created in NearZips
+
+db.Maps.aggregate([
+  {
+    $geoNear: {
+      near: { type: "Point", coordinates: [-74.044502, 40.689247] },
+      distanceField: "distance",
+      spherical: true,
+      maxDistance: 200 * 1000,  // 200 kilometers in meters
+      query: { population: { $exists: true } }
+    }
+  },
+  {
+    $match: {
+      distance: { $gte: 50 * 1000 }  // 50 kilometers in meters
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      totalPopulation: { $sum: "$population" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      totalPopulation: 1
+    }
+  }
+])
