@@ -1,0 +1,58 @@
+#Get the largest and the smallest counties in each state
+
+db.Maps.aggregate([
+  {
+    $match: {
+      population: { $exists: true }
+    }
+  },
+  {
+    $group: {
+      _id: { state_name: "$state_name", county_name: "$county_name" },
+      totalPopulation: { $sum: "$population" }
+    }
+  },
+  {
+    $group: {
+      _id: "$_id.state_name",
+      largestCounty: { $max: "$totalPopulation" },
+      smallestCounty: { $min: "$totalPopulation" },
+      counties: { 
+        $push: { 
+          county_name: "$_id.county_name",
+          population: "$totalPopulation"
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      state_name: "$_id",
+      largestCounty: {
+        $arrayElemAt: [
+          {
+            $filter: {
+              input: "$counties",
+              as: "county",
+              cond: { $eq: ["$$county.population", "$largestCounty"] }
+            }
+          },
+          0
+        ]
+      },
+      smallestCounty: {
+        $arrayElemAt: [
+          {
+            $filter: {
+              input: "$counties",
+              as: "county",
+              cond: { $eq: ["$$county.population", "$smallestCounty"] }
+            }
+          },
+          0
+        ]
+      }
+    }
+  }
+])
