@@ -1,0 +1,39 @@
+#Get the nearest 10 zips from one of Chicago's landmarks, the Willis Tower situated at coordinates 41.878876, -87.635918
+
+db.Maps.createIndex({ location: "2dsphere" })
+db.Maps.updateMany(
+  {},
+  [
+    {
+      $set: {
+        location: {
+          type: "Point",
+          coordinates: ["$lng", "$lat"]
+        }
+      }
+    }
+  ]
+)
+db.Maps.aggregate([
+  {
+    $geoNear: {
+      near: { type: "Point", coordinates: [-87.635918, 41.878876] },
+      distanceField: "distance",
+      spherical: true
+    }
+  },
+  {
+    $limit: 10
+  },
+  {
+    $project: {
+      _id: 0,
+      zip: 1,
+      city: 1,
+      state_id: 1,
+      state_name: 1,
+      population: 1,
+      distance: 1
+    }
+  }
+])
