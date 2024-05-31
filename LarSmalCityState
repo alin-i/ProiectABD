@@ -1,0 +1,47 @@
+#Get the largest and the smallest city in each state
+
+
+db.Maps.aggregate([
+  {
+    $match: {
+      population: { $exists: true }
+    }
+  },
+  {
+    $group: {
+      _id: "$state_name",
+      largestCity: { $max: "$population" },
+      smallestCity: { $min: "$population" }
+    }
+  },
+  {
+    $lookup: {
+      from: "Maps",
+      let: { state: "$_id", largest: "$largestCity" },
+      pipeline: [
+        { $match: { $expr: { $and: [ { $eq: ["$state_name", "$$state"] }, { $eq: ["$population", "$$largest"] } ] } } },
+        { $project: { city: 1, population: 1, _id: 0 } }
+      ],
+      as: "largestCityDetails"
+    }
+  },
+  {
+    $lookup: {
+      from: "Maps",
+      let: { state: "$_id", smallest: "$smallestCity" },
+      pipeline: [
+        { $match: { $expr: { $and: [ { $eq: ["$state_name", "$$state"] }, { $eq: ["$population", "$$smallest"] } ] } } },
+        { $project: { city: 1, population: 1, _id: 0 } }
+      ],
+      as: "smallestCityDetails"
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      state_name: "$_id",
+      largestCity: { $arrayElemAt: ["$largestCityDetails", 0] },
+      smallestCity: { $arrayElemAt: ["$smallestCityDetails", 0] }
+    }
+  }
+])
